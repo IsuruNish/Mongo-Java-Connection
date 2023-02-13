@@ -2,8 +2,6 @@ package org.example.Database;
 
 import com.mongodb.MongoClient;
 
-
-
 public class DBconnection {
     private static MongoClient mongoClient;
     private String host = "localhost";

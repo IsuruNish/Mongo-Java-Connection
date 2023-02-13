@@ -1,21 +1,26 @@
 package org.example.DAO;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.DBCursor;
 import com.mongodb.MongoClient;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.DeleteResult;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.example.DAO.MongoFunctionsDAO;
 import org.example.Database.DBconnection;
+import org.example.Model.Metadata;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class MongoFunctionsDAOImpl implements MongoFunctionsDAO {
-
     DBconnection dbConObj = new DBconnection();
     MongoClient mongoClient = dbConObj.getDatabaseConnetionObj();
 
@@ -44,13 +49,24 @@ public class MongoFunctionsDAOImpl implements MongoFunctionsDAO {
         dbObj.getCollection(collectionName).drop();
     }
 
+    //insert
     @Override
-    public void insertDocument(String collectionName, String json, MongoDatabase dbObj) {
-        Document doc = Document.parse(json);
+    public void insertDocument(String collectionName, Metadata jsonObj, MongoDatabase dbObj) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        String jsonStr = mapper.writeValueAsString(jsonObj);
+
+        Document doc = Document.parse(jsonStr);
         MongoCollection<Document> collection = dbObj.getCollection(collectionName);
         collection.insertOne(doc);
     }
 
+    //update
+    @Override
+    public void updateDocument(String collectionName, String attributePath, Object oldValue, Object newValue, MongoDatabase dbObj){
+        MongoCollection<Document> collection = dbObj.getCollection(collectionName);
+        collection.updateOne(Filters.eq(attributePath, oldValue), Updates.set(attributePath, newValue));
+    }
+    @Override
     public void updateDocument(String collectionName, String jsonQuery, String newJsonQuery, MongoDatabase dbObj){
         Document doc = Document.parse(jsonQuery);
         Document newDoc = Document.parse(newJsonQuery);
@@ -67,6 +83,7 @@ public class MongoFunctionsDAOImpl implements MongoFunctionsDAO {
         System.out.println("User updated");
     }
 
+    //delete
     @Override
     public void deleteDocument(String jsonQuery, String collectionName, MongoDatabase dbObj) {
         Document doc = Document.parse(jsonQuery);
@@ -80,6 +97,7 @@ public class MongoFunctionsDAOImpl implements MongoFunctionsDAO {
         }
     }
 
+    //get all docs
     @Override
     public void getAllDocuments(String collectionName, MongoDatabase dbObj)  {
         MongoCollection<Document> collection = dbObj.getCollection(collectionName);
@@ -89,6 +107,7 @@ public class MongoFunctionsDAOImpl implements MongoFunctionsDAO {
         }
     }
 
+    //find functions
     @Override
     public void findOne(String jsonQuery, String collectionName, MongoDatabase dbObj) {
         Document doc = Document.parse(jsonQuery);
@@ -96,11 +115,35 @@ public class MongoFunctionsDAOImpl implements MongoFunctionsDAO {
         Document result = (Document) collection.find(doc).first();
         System.out.println(result);
     }
-
     @Override
-    public void findOne(String key, Object value, String collectionName, MongoDatabase dbObj) {
+    public List<Document> find(String jsonQuery, String collectionName, MongoDatabase dbObj) {
         MongoCollection<Document> collection = dbObj.getCollection(collectionName);
-        Document result = (Document) collection.find(new Document(key, value)).first();
-        System.out.println(result);
+        Document doc = Document.parse(jsonQuery);
+
+        List<Document> docList = collection.find(doc).into(new ArrayList<>());
+        return docList;
+    }
+    @Override
+    public Metadata find(String key, Object value, String collectionName, MongoDatabase dbObj) throws JsonProcessingException {
+        MongoCollection<Document> collection = dbObj.getCollection(collectionName);
+        List<Document> docList = collection.find(new Document(key, value)).into(new ArrayList<>());
+
+        ObjectMapper mapper = new ObjectMapper();
+        String jsonStr = mapper.writeValueAsString(docList);
+        mapper = new ObjectMapper();
+
+        return mapper.readValue(jsonStr.substring(1, jsonStr.length()-1), Metadata.class);
+    }
+    @Override
+    public Metadata findOne(String key, Object value, String collectionName, MongoDatabase dbObj) throws JsonProcessingException {
+        MongoCollection<Document> collection = dbObj.getCollection(collectionName);
+        List<Document> docList = collection.find(new Document(key, value)).into(new ArrayList<>());
+        ObjectMapper mapper = new ObjectMapper();
+        String jsonStr = mapper.writeValueAsString(docList);
+
+        mapper = new ObjectMapper();
+        Metadata metadataObj = mapper.readValue(jsonStr.substring(1, jsonStr.length()-1), Metadata.class);
+
+        return metadataObj;
     }
 }

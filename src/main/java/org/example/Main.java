@@ -1,44 +1,45 @@
 package org.example;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.MongoClient;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
-import org.bson.Document;
 import org.example.DAO.MongoFunctionsDAO;
 import org.example.DAO.MongoFunctionsDAOImpl;
 import org.example.Database.DBconnection;
-
+import org.example.Model.Metadata;
 
 public class Main {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws JsonProcessingException {
+        String json1 =
+                " { \"firstName\": \"Isuru\"," +
+                    " \"lastName\": \"Nishadha\", " +
+                    " \"signupDate\": \"2023.02.10\" ,"+
+                    "\"userVerified\": true ,  " +
+                    " \"metadata\" : {" +
+                        "\"nic\": {" +
+                            "\"verified\" :  true " +
+                        " }, " +
+                    "\"address\" : {" +
+                            "\"verified\" :  false " +
+                        " } " +
+                    "}"+
+                "}";
 
-        String json = "{ \"name\": \"isuru\", \"age\": 43, \"courses\": {\"cname\": \"dsa\", \"credits\":3   } }";
-        String djson = "{ \"name\": \"isuru\" }";
-        String njson = "{ \"name\": \"nish\" }";
+        String json2 = "{ \"name\": \"isuru\" }";
+        String json3 = "{ \"name\": \"nish\" }";
 
+
+        ObjectMapper mapper = new ObjectMapper();
+        Metadata jsonObj = mapper.readValue(json1, Metadata.class);
+        System.out.println(jsonObj);
 
         //Database connection
         DBconnection dbConObj = new DBconnection();
         MongoClient mongoClient = dbConObj.getDatabaseConnetionObj();
-        MongoDatabase db = mongoClient.getDatabase("zzz");
+        MongoDatabase db = mongoClient.getDatabase("test");
 
         //using this object we can call the DAO methods
         MongoFunctionsDAO obj = new MongoFunctionsDAOImpl();
-
-        obj.getDatabases();
-        obj.insertDocument("zzz",json, db);
-//        obj.deleteDocument(djson, "TestCol", db);
-//        obj.dropCollection("uni work", db);
-//        MongoCollection<Document> collection= db.getCollection("test");
-//        Document doc =new Document("name","Isuru").append("age", "23");
-
-        obj.findOne(djson, "zzz",db);
-//        obj.updateDocument("zzz", djson, njson,db );
-
-//        obj.findALL(djson, "zzz", db);
-
-//        obj.findOne("age",23, "zzz",db);
-
-    }
+            }
 }
